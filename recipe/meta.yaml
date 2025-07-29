@@ -23,14 +23,18 @@ requirements:
     - python
 
 test:
+  source_files:
+    - test
   imports:
     - xdg
   requires:
     - python
     - pip
+    - pytest
   commands:
     - pip check
     - python -c "from importlib.metadata import version; assert(version('{{ name }}')=='{{ version }}')"
+    - pytest -vv test
 
 about:
   home: http://freedesktop.org/wiki/Software/pyxdg
