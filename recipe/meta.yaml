@@ -14,6 +14,8 @@ source:
     - patches/0000_replace_deprecated_imp_with_importlib.patch  # [py>=312]
 
 build:
+  # While not explicitly documented, the package uses fcntl.lockf() which is non-Windows.
+  skip: true  # [win]
   number: 0
   script: {{ PYTHON }} -m pip install . --no-deps --ignore-installed --no-build-isolation -vvv
 
