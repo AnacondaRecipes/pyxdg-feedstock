@@ -51,12 +51,14 @@ test:
     - pytest -vv {{ skip_tests }} test
 
 about:
-  home: http://freedesktop.org/wiki/Software/pyxdg
+  home: https://freedesktop.org/wiki/Software/pyxdg
   license: GNU Lesser General Public v2 (LGPLv2)
   license_family: LGPL
-  license_file: 'COPYING'
+  license_file: COPYING
   summary: PyXDG contains implementations of freedesktop.org standards in python.
-  description: "PyXDG is a python library to access freedesktop.org standards"
+  description: PyXDG is a python library to access freedesktop.org standards
+  dev_url: https://cgit.freedesktop.org/xdg/pyxdg
+  doc_url: https://pyxdg.readthedocs.io
 
 extra:
   recipe-maintainers:
