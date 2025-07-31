@@ -14,7 +14,9 @@ source:
     - patches/0000_replace_deprecated_imp_with_importlib.patch  # [py>=312]
   # Code uses non-Windows fcntl lockf() API for file locking. 
   # Use equivalent msvcrt locking() instead for Windows platform.
-    - patches/0001_use_cross_platform_file_locking.patch  # [win]
+  #  - patches/0001_use_cross_platform_file_locking.patch  # [win]
+  # Use cross-platform APIs.
+    - patches/0001_cross_platform.patch  # [win]
 
 build:
   number: 0

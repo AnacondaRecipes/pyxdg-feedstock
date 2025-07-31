@@ -1,0 +1,103 @@
+diff --git a/test/test_basedirectory.py b/test/test_basedirectory.py
+index 954f573..099947f 100644
+--- a/test/test_basedirectory.py
++++ b/test/test_basedirectory.py
+@@ -69,7 +69,7 @@ class BaseDirectoryTest(unittest.TestCase):
+         os.mkdir(path)
+         try:
+             environ['XDG_CONFIG_HOME'] = tmpdir
+-            environ['XDG_CONFIG_DIRS'] = ":".join([tmpdir2, tmpdir3])
++            environ['XDG_CONFIG_DIRS'] = os.pathsep.join([tmpdir2, tmpdir3])
+             reload(BaseDirectory)
+             configdir = BaseDirectory.load_first_config("wpokewefketnrhruit")
+             self.assertEqual(configdir, path)
+@@ -87,7 +87,7 @@ class BaseDirectoryTest(unittest.TestCase):
+         os.mkdir(path2)
+         try:
+             environ['XDG_CONFIG_HOME'] = tmpdir
+-            environ['XDG_CONFIG_DIRS'] = tmpdir2 + ":/etc/xdg"
++            environ['XDG_CONFIG_DIRS'] = tmpdir2 + os.pathsep + "/etc/xdg"
+             reload(BaseDirectory)
+             configdirs = BaseDirectory.load_config_paths("wpokewefketnrhruit")
+             self.assertEqual(list(configdirs), [path, path2])
+diff --git a/xdg/BaseDirectory.py b/xdg/BaseDirectory.py
+index 3c3afe8..7068253 100644
+--- a/xdg/BaseDirectory.py
++++ b/xdg/BaseDirectory.py
+@@ -25,20 +25,20 @@ Typical usage:
+ Note: see the rox.Options module for a higher-level API for managing options.
+ """
+ 
+-import os, stat
++import os, stat, sys
+ 
+ _home = os.path.expanduser('~')
+ xdg_data_home = os.environ.get('XDG_DATA_HOME') or \
+             os.path.join(_home, '.local', 'share')
+ 
+ xdg_data_dirs = [xdg_data_home] + \
+-    (os.environ.get('XDG_DATA_DIRS') or '/usr/local/share:/usr/share').split(':')
++    (os.environ.get('XDG_DATA_DIRS') or '/usr/local/share:/usr/share').split(os.pathsep)
+ 
+ xdg_config_home = os.environ.get('XDG_CONFIG_HOME') or \
+             os.path.join(_home, '.config')
+ 
+ xdg_config_dirs = [xdg_config_home] + \
+-    (os.environ.get('XDG_CONFIG_DIRS') or '/etc/xdg').split(':')
++    (os.environ.get('XDG_CONFIG_DIRS') or '/etc/xdg').split(os.pathsep)
+ 
+ xdg_cache_home = os.environ.get('XDG_CACHE_HOME') or \
+             os.path.join(_home, '.cache')
+@@ -140,7 +140,7 @@ def get_runtime_dir(strict=True):
+     try:
+         return os.environ['XDG_RUNTIME_DIR']
+     except KeyError:
+-        if strict:
++        if strict or sys.platform=='win32':
+             raise
+         
+         import getpass
+diff --git a/xdg/RecentFiles.py b/xdg/RecentFiles.py
+index 7ee7ee5..ea0de6b 100644
+--- a/xdg/RecentFiles.py
++++ b/xdg/RecentFiles.py
+@@ -4,8 +4,13 @@ http://standards.freedesktop.org/recent-file-spec
+ """
+ 
+ import xml.dom.minidom, xml.sax.saxutils
+-import os, time, fcntl
++import os, time
+ from xdg.Exceptions import ParsingError
++import sys
++if sys.platform == 'win32':
++    import msvcrt
++else:
++    import fcntl
+ 
+ class RecentFiles:
+     def __init__(self):
+@@ -72,7 +77,11 @@ class RecentFiles:
+             filename = self.filename
+ 
+         with open(filename, "w") as f:
+-            fcntl.lockf(f, fcntl.LOCK_EX)
++            if sys.platform == 'win32':
++                msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 2**31 - 1)
++            else:
++                fcntl.lockf(f, fcntl.LOCK_EX)
++            
+             f.write('<?xml version="1.0"?>\n')
+             f.write("<RecentFiles>\n")
+ 
+@@ -91,7 +100,10 @@ class RecentFiles:
+                 f.write("  </RecentItem>\n")
+ 
+             f.write("</RecentFiles>\n")
+-            fcntl.lockf(f, fcntl.LOCK_UN)
++            if sys.platform == 'win32':
++                msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 2**31 - 1)
++            else:
++                fcntl.lockf(f, fcntl.LOCK_UN)
+ 
+     def getFiles(self, mimetypes=None, groups=None, limit=0):
+         """Get a list of recently used files.
