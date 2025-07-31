@@ -1,8 +1,16 @@
 diff --git a/test/test_basedirectory.py b/test/test_basedirectory.py
-index 954f573..099947f 100644
+index 954f573..ae69c4f 100644
 --- a/test/test_basedirectory.py
 +++ b/test/test_basedirectory.py
-@@ -69,7 +69,7 @@ class BaseDirectoryTest(unittest.TestCase):
+@@ -5,6 +5,7 @@ from os import environ
+ import unittest
+ import tempfile, shutil
+ import stat
++import sys
+ 
+ try:
+     reload
+@@ -69,7 +70,7 @@ class BaseDirectoryTest(unittest.TestCase):
          os.mkdir(path)
          try:
              environ['XDG_CONFIG_HOME'] = tmpdir
@@ -11,7 +19,7 @@ index 954f573..099947f 100644
              reload(BaseDirectory)
              configdir = BaseDirectory.load_first_config("wpokewefketnrhruit")
              self.assertEqual(configdir, path)
-@@ -87,7 +87,7 @@ class BaseDirectoryTest(unittest.TestCase):
+@@ -87,7 +88,7 @@ class BaseDirectoryTest(unittest.TestCase):
          os.mkdir(path2)
          try:
              environ['XDG_CONFIG_HOME'] = tmpdir
@@ -20,8 +28,18 @@ index 954f573..099947f 100644
              reload(BaseDirectory)
              configdirs = BaseDirectory.load_config_paths("wpokewefketnrhruit")
              self.assertEqual(list(configdirs), [path, path2])
+@@ -104,6 +105,9 @@ class BaseDirectoryTest(unittest.TestCase):
+     def test_runtime_dir_notset(self):
+         environ.pop('XDG_RUNTIME_DIR', None)
+         self.assertRaises(KeyError, BaseDirectory.get_runtime_dir, strict=True)
++        # On Windows, only check that calling get_runtime_dir without XDG_RUNTIME_DIR raises correct error
++        if sys.platform=='win32':
++            return
+         fallback = BaseDirectory.get_runtime_dir(strict=False)
+         assert fallback.startswith('/tmp/'), fallback
+         assert os.path.isdir(fallback), fallback
 diff --git a/xdg/BaseDirectory.py b/xdg/BaseDirectory.py
-index 3c3afe8..7068253 100644
+index 3c3afe8..07e018e 100644
 --- a/xdg/BaseDirectory.py
 +++ b/xdg/BaseDirectory.py
 @@ -25,20 +25,20 @@ Typical usage:
@@ -48,11 +66,12 @@ index 3c3afe8..7068253 100644
  
  xdg_cache_home = os.environ.get('XDG_CACHE_HOME') or \
              os.path.join(_home, '.cache')
-@@ -140,7 +140,7 @@ def get_runtime_dir(strict=True):
+@@ -140,7 +140,8 @@ def get_runtime_dir(strict=True):
      try:
          return os.environ['XDG_RUNTIME_DIR']
      except KeyError:
 -        if strict:
++        # Skip fallback on Windows (only allow strict=True behavior)
 +        if strict or sys.platform=='win32':
              raise
          
