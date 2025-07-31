@@ -1,0 +1,44 @@
+diff --git a/xdg/RecentFiles.py b/xdg/RecentFiles.py
+index 7ee7ee5..c23e357 100644
+--- a/xdg/RecentFiles.py
++++ b/xdg/RecentFiles.py
+@@ -4,8 +4,13 @@ http://standards.freedesktop.org/recent-file-spec
+ """
+ 
+ import xml.dom.minidom, xml.sax.saxutils
+-import os, time, fcntl
++import os, time
+ from xdg.Exceptions import ParsingError
++import sys
++if sys.platform == 'win32':
++    import msvcrt
++else:
++    import fcntl
+ 
+ class RecentFiles:
+     def __init__(self):
+@@ -72,7 +77,11 @@ class RecentFiles:
+             filename = self.filename
+ 
+         with open(filename, "w") as f:
+-            fcntl.lockf(f, fcntl.LOCK_EX)
++            if sys.platform == 'win32':
++                msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 2**31 - 1)
++            else:
++                fcntl.lockf(f, fcntl.LOCK_EX)
++            
+             f.write('<?xml version="1.0"?>\n')
+             f.write("<RecentFiles>\n")
+ 
+@@ -91,7 +100,10 @@ class RecentFiles:
+                 f.write("  </RecentItem>\n")
+ 
+             f.write("</RecentFiles>\n")
+-            fcntl.lockf(f, fcntl.LOCK_UN)
++            if sys.platform == 'win32':
++                msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 2**31 - 1)
++            else:
++                fcntl.lockf(f, fcntl.LOCK_UN)
+ 
+     def getFiles(self, mimetypes=None, groups=None, limit=0):
+         """Get a list of recently used files.
