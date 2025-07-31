@@ -35,6 +35,9 @@ build:
 {% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_inheritance" %}
 
 requirements:
+  build:
+    - patch     # [not win]
+    - m2-patch  # [win]
   host:
     - python
     - pip
