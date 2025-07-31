@@ -34,7 +34,7 @@ build:
 {% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_inheritance" %}
 
 requirements:
-  build:
+  host:
     - python
     - pip
     - setuptools
@@ -58,7 +58,7 @@ test:
 
 about:
   home: https://freedesktop.org/wiki/Software/pyxdg
-  license: GNU Lesser General Public v2 (LGPLv2)
+  license: LGPL-2.0-only
   license_family: LGPL
   license_file: COPYING
   summary: PyXDG contains implementations of freedesktop.org standards in python.
