@@ -1,38 +1,69 @@
 {% set name = "pyxdg" %}
-{% set version = "0.27" %}
+{% set version = "0.28" %}
 
 package:
   name: '{{ name|lower }}'
   version: '{{ version }}'
 
 source:
-  fn: '{{ name }}-{{ version }}.tar.gz'
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  sha256: 80bd93aae5ed82435f20462ea0208fb198d8eec262e831ee06ce9ddb6b91c5a5
+  sha256: 3267bb3074e934df202af2ee0868575484108581e6f3cb006af1da35395e88b4
+  patches:
+    # Replace usage of deprecated imp.reload() in tests with importlib.reload().
+    # Deprecated usage warning up to 3.11, removed altogether from 3.12 and up.
+    - patches/0000_replace_deprecated_imp_with_importlib.patch  # [py>=312]
 
 build:
+  skip: true  # [win]
   number: 0
-  script: python -m pip install --no-deps --ignore-installed .
-  noarch: python
+  script: {{ PYTHON }} -m pip install . --no-deps --ignore-installed --no-build-isolation -vvv
+
+# Skip broken tests: Tests rely on specific data configuration files which are
+# not present in the repository.
+{% set skip_tests = "" %}
+{% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_by_name" %}
+{% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_canonical" %}
+{% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_create_mimetype" %}
+{% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_get_comment" %}
+{% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_get_type" %}
+{% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_get_type2" %}
+{% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_get_type_by_contents" %}
+{% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_get_type_by_data" %}
+{% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_get_type_by_name" %}
+{% set skip_tests = skip_tests + " --deselect=test/test_mime.py::MimeTest::test_inheritance" %}
 
 requirements:
-  build:
+  host:
     - python
     - pip
+    - setuptools
+    - wheel
   run:
     - python
 
 test:
+  source_files:
+    - test
   imports:
     - xdg
+  requires:
+    - python
+    - pip
+    - pytest
+  commands:
+    - pip check
+    - python -c "from importlib.metadata import version; assert(version('{{ name }}')=='{{ version }}')"
+    - pytest -vv {{ skip_tests }} test
 
 about:
-  home: http://freedesktop.org/wiki/Software/pyxdg
-  license: GNU Lesser General Public v2 (LGPLv2)
+  home: https://freedesktop.org/wiki/Software/pyxdg
+  license: LGPL-2.0-only
   license_family: LGPL
-  license_file: 'COPYING'
+  license_file: COPYING
   summary: PyXDG contains implementations of freedesktop.org standards in python.
-  description: "PyXDG is a python library to access freedesktop.org standards"
+  description: PyXDG is a python library to access freedesktop.org standards
+  dev_url: https://cgit.freedesktop.org/xdg/pyxdg
+  doc_url: https://pyxdg.readthedocs.io
 
 extra:
   recipe-maintainers:
