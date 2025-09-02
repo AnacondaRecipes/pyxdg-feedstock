@@ -8,15 +8,9 @@ package:
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
   sha256: 3267bb3074e934df202af2ee0868575484108581e6f3cb006af1da35395e88b4
-  patches:
-  # Replace usage of deprecated imp.reload() in tests with importlib.reload().
-  # Deprecated usage warning up to 3.11, removed altogether from 3.12 and up.
-    - patches/0000_replace_deprecated_imp_with_importlib.patch  # [py>=312]
-  # Code uses non-Windows APIs. Due to Windows version being available in older version of
-  # the package, make minor adjustments to the code enabling basic Windows platform support.
-    - patches/0001_cross_platform_win32_support.patch  # [win]
 
 build:
+  skip: true  # [win]
   number: 0
   script: {{ PYTHON }} -m pip install . --no-deps --ignore-installed --no-build-isolation -vvv
 
@@ -37,7 +31,6 @@ build:
 requirements:
   build:
     - patch     # [py>=312 and not win]
-    - m2-patch  # [win]
   host:
     - python
     - pip
