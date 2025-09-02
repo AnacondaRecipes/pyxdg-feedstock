@@ -34,7 +34,7 @@ build:
 
 requirements:
   build:
-    - patch     # [py>=312 and not win]
+    - patch  # [py>=312]
   host:
     - python
     - pip
